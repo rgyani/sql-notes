@@ -21,7 +21,7 @@ WHERE rank = 3;
 ```
 
 - **RANK()** gives you the ranking within your ordered partition. Ties are assigned the same rank, with the next ranking(s) skipped. So, if you have 3 items at rank 2, the next rank listed would be ranked 5.
-- **DENSE_RANK()** again gives you the ranking within your ordered partition, but the ranks are consecutive. No ranks are skipped if there are ranks with multiple items.
+- **DENSE_RANK()** again gives you the ranking within your ordered partition, but the ranks are consecutive. No ranks are skipped if there are ranks with multiple items. So, if you have 3 items at rank 2, the next rank listed would be ranked 3.
 
 
 ### How would you write a query to calculate a cumulative sum or running total within a specific partition in SQL?
