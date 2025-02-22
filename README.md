@@ -1,5 +1,162 @@
 # sql-notes
 
+### SQL Window Functions Guide
+SQL window functions allow you to perform calculations across a set of table rows that are related to the current row, without collapsing them into a single result. Unlike aggregate functions (SUM, AVG, etc.), **window functions retain individual row details** while computing aggregates over a defined "window" of rows.
+
+## 1. Syntax of Window Functions
+```sql
+<function> OVER (
+    PARTITION BY <column>
+    ORDER BY <column>
+    ROWS BETWEEN <frame_spec>
+)
+```
+- **function**: Aggregate or ranking function (e.g., SUM, AVG, ROW_NUMBER).
+- **PARTITION BY**: Divides the result set into partitions (**optional**).
+- **ORDER BY**: Defines the order in which window calculations are applied.
+- **ROWS BETWEEN**: Defines a moving window frame (**optional**).
+
+### 2. Types of Window Functions
+Window functions fall into three main categories:
+
+1. Ranking Functions
+2. Aggregate Functions
+3. Value-Based Functions
+
+### 3. Ranking Functions
+1. **ROW_NUMBER()**  
+Assigns a unique sequential number to each row within a partition, ordered by a specified column.
+
+```sql
+-- Use case: Getting the top-N highest salaries in each department.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) AS row_num
+FROM employees;
+
+-- Use case: Get the top-N highest salaries in the entire company.
+SELECT 
+    employee_id, 
+    salary, 
+    ROW_NUMBER() OVER (ORDER BY salary DESC) AS row_num
+FROM employees;
+```
+
+2. **RANK()** and **DENSE_RANK()**  
+* **RANK()** : Similar to ROW_NUMBER(), but assigns the same rank to duplicate values and skips numbers.
+* **DENSE_RANK()**: Like RANK(), but does not skip numbers when duplicates exist.
+```sql
+-- Use case: Ranking employees by salary with gaps if there are duplicates.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS rank
+FROM employees
+
+-- Use case: Identify the highest-paid employees.
+SELECT 
+    employee_id, 
+    salary, 
+    DENSE_RANK() OVER (ORDER BY salary DESC) AS rank
+FROM employees;
+```
+
+### 4. Aggregate Functions as Window Functions  
+These behave like standard aggregate functions but without collapsing rows.
+
+1. **SUM()**, **AVG()**, **MIN()** / **MAX()**
+
+```sql
+-- Running total of salaries within each department.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    SUM(salary) OVER (PARTITION BY department ORDER BY salary) AS running_total
+FROM employees;
+
+-- Average salary without collapsing rows.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    AVG(salary) OVER (PARTITION BY department) AS avg_salary
+FROM employees;
+
+-- Minimum and maximum salaries within a department.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    MIN(salary) OVER (PARTITION BY department) AS min_salary,
+    MAX(salary) OVER (PARTITION BY department) AS max_salary
+FROM employees;
+```
+
+### 5. Value-Based Functions
+These return values from different rows relative to the current row.
+1. **LAG()**, **LEAD()**, **FIRST_VALUE()**, **LAST_VALUE()**
+
+```sql
+-- LAG():  Gets the previous row's value.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    LAG(salary) OVER (PARTITION BY department ORDER BY salary) AS prev_salary
+FROM employees;
+
+-- LEAD(): Gets the next row's value.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    LEAD(salary) OVER (PARTITION BY department ORDER BY salary) AS next_salary
+FROM employees;
+
+-- FIRST_VALUE(): Returns the first value in a partition.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    FIRST_VALUE(salary) OVER (PARTITION BY department ORDER BY salary DESC) AS highest_salary
+FROM employees;
+
+-- LAST_VALUE(): Returns the last value in a partition based on sorting.
+SELECT 
+    employee_id, 
+    department, 
+    salary, 
+    LAST_VALUE(salary) OVER (PARTITION BY department ORDER BY salary DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS lowest_salary
+FROM employees;
+```
+
+
+### 6. Frame Specifications (ROWS BETWEEN)
+Defines how many rows to include in a window.
+
+1. Rolling Sum of the Last 3 Rows
+```sql
+SELECT 
+    employee_id, 
+    salary, 
+    SUM(salary) OVER (ORDER BY employee_id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_sum
+FROM employees;
+```
+
+2. Running Total (All Rows Before Current)
+```sql
+SELECT 
+    employee_id, 
+    salary, 
+    SUM(salary) OVER (ORDER BY employee_id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_total
+FROM employees;
+```
+
+
 ### How would you find the third highest salary from a table
 
 | DATABASE | QUERY|
